@@ -4,6 +4,7 @@ import (
 	"github.com/a-h/templ"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type Handler struct {
@@ -35,7 +36,11 @@ func (ih IssueHandlerClient) PostNewIssue(w http.ResponseWriter, r *http.Request
 }
 
 func (ih IssueHandlerServer) PostNewIssue(w http.ResponseWriter, r *http.Request) {
-	createIssue(map[string]string{"title": r.FormValue("title"), "content": r.FormValue("type"), "type": r.FormValue("type")})
+	err := r.ParseForm()
+	if err != nil {
+		log.Fatal(err)
+	}
+	createIssue(map[string]string{"title": r.Form["title"][0], "content": r.Form["content"][0], "labels": strings.Join(r.Form["labels"], ",")})
 	w.Header().Add("HX-Redirect", "/")
 }
 func (ih IssueHandlerServer) PutNewIssue(w http.ResponseWriter, r *http.Request) {

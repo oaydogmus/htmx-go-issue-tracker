@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -24,6 +25,27 @@ templ base() {
 	</html>
 }
 
+func generateIssueLabelChipStyle(label string) string {
+	style := "p-1 text-sm rounded-full border"
+	switch label {
+	case "improvement":
+		style = style + " border-teal-600/30 bg-teal-600/15 text-teal-600"
+	case "bug":
+		style = style + " border-rose-600/30 bg-rose-600/15 text-rose-600"
+	}
+	return style
+}
+func generateIssueLabelIndicatorStyle(label string) string {
+	style := "size-4 rounded-full"
+	switch label {
+	case "improvement":
+		style = style + " bg-teal-600/30"
+	case "bug":
+		style = style + " bg-rose-600/30"
+	}
+	return style
+}
+
 templ index(issues []Issue) {
 	@base() {
 		<div class="flex justify-between items-center py-2">
@@ -36,9 +58,11 @@ templ index(issues []Issue) {
 					<p>
 						<span>[ { string(issues[i].Status) } ]</span>
 						<a href={ templ.URL(fmt.Sprintf("/issue/%s", issues[i].Id)) } class="font-semibold">{ issues[i].Title }</a>
-						<span>
-							({ string(issues[i].Type) })
-						</span>
+						for _, label := range strings.Split(issues[i].Labels, ",") {
+							<span class={ generateIssueLabelChipStyle(label) }>
+								{ string(label) }
+							</span>
+						}
 					</p>
 					<p class="italic">by { issues[i].Creator.Name } - { issues[i].CreatedAt.Format("02/01/2006 15:04") }</p>
 				</li>
@@ -66,7 +90,18 @@ templ AddIssue() {
 		<form hx-post="/api/issue" class="flex flex-col gap-2">
 			@textInput("title")
 			@textAreaInput("content")
-			@selectInput("type", issueTypes)
+			<div class="flex flex-col">
+				<legend>Labels</legend>
+				for _,opt := range issueLabels {
+					<div class="flex gap-1">
+						<input type="checkbox" id={ opt } name="labels" value={ opt }/>
+						<label class="flex items-center gap-1" for={ opt }>
+							<span class={ generateIssueLabelIndicatorStyle(opt) }></span>
+							<span>{ titleCaser.String(opt) }</span>
+						</label>
+					</div>
+				}
+			</div>
 			@button("Create", templ.Attributes{"type": "submit"})
 		</form>
 	}
@@ -99,12 +134,12 @@ templ textAreaInput(name string) {
 	</div>
 }
 
-templ selectInput[T ~string](name string, opts []T) {
+templ selectInput(name string, opts []string) {
 	<div class="flex flex-col">
 		<label for={ name }>{ titleCaser.String(name) }</label>
 		<select class="border rounded-md" id={ name } name={ name }>
 			for _,opt := range opts {
-				<option value={ string(opt) }>{ string(opt) }</option>
+				<option value={ opt }>{ opt }</option>
 			}
 		</select>
 	</div>

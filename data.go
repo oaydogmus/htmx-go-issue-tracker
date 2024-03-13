@@ -13,7 +13,7 @@ type User struct {
 	CreatedAt time.Time
 }
 
-var issueTypes []string = []string{"bug", "improvement"}
+var issueLabels []string = []string{"bug", "improvement"}
 var issueStatus []string = []string{"open", "closed"}
 
 type Issue struct {
@@ -21,7 +21,7 @@ type Issue struct {
 	Title     string
 	Content   string
 	Creator   User
-	Type      string
+	Labels    string
 	Status    string
 	CreatedAt time.Time
 }
@@ -34,8 +34,8 @@ func init() {
 		{"name": "Ozgur A"},
 	}
 	defaultIssues := []map[string]string{
-		{"title": "button is not clickable", "content": "fix this", "type": "bug"},
-		{"title": "improve button readability", "content": "please add this", "type": "improvement"},
+		{"title": "button is not clickable", "content": "fix this", "labels": "bug"},
+		{"title": "improve button readability", "content": "please add this", "labels": "improvement"},
 	}
 	for _, d := range defaultUsers {
 		createUser(d)
@@ -58,7 +58,7 @@ func createIssue(issueData map[string]string) Issue {
 		Title:     issueData["title"],
 		Content:   issueData["content"],
 		Creator:   users[0],
-		Type:      issueData["type"],
+		Labels:    issueData["labels"],
 		Status:    "open",
 		CreatedAt: time.Now(),
 	}
