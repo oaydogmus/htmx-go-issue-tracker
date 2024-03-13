@@ -1,0 +1,111 @@
+package main
+
+import (
+	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
+
+var titleCaser cases.Caser = cases.Title(language.English)
+
+templ base() {
+	<html>
+		<head>
+			<title>Issue Tracker</title>
+			<link href="/static/tailwind.css" rel="stylesheet"/>
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+		</head>
+		<body>
+			@header()
+			<main class="w-1/2 mx-auto">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+templ index(issues []Issue) {
+	@base() {
+		<div class="flex justify-between items-center py-2">
+			<p class="font-bold">Issues</p>
+			@linkButton("Create Issue", templ.Attributes{"href": "/issue/new"})
+		</div>
+		<ul class="bg-slate-300 list-none divide-y">
+			for i:= len(issues)-1; i >= 0; i-- {
+				<li class="p-2">
+					<p>
+						<span>[ { string(issues[i].Status) } ]</span>
+						<a href={ templ.URL(fmt.Sprintf("/issue/%s", issues[i].Id)) } class="font-semibold">{ issues[i].Title }</a>
+						<span>
+							({ string(issues[i].Type) })
+						</span>
+					</p>
+					<p class="italic">by { issues[i].Creator.Name } - { issues[i].CreatedAt.Format("02/01/2006 15:04") }</p>
+				</li>
+			}
+		</ul>
+	}
+}
+
+templ button(text string, attrs templ.Attributes) {
+	<button class="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-white" { attrs... }>{ text }</button>
+}
+
+templ linkButton(text string, attrs templ.Attributes) {
+	<a class="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-white" { attrs... }>{ text }</a>
+}
+
+templ header() {
+	<a href="/">
+		<header class="bg-slate-700 w-full text-white font-bold py-4 text-center">Issue Tracker</header>
+	</a>
+}
+
+templ AddIssue() {
+	@base() {
+		<form hx-post="/api/issue" class="flex flex-col gap-2">
+			@textInput("title")
+			@textAreaInput("content")
+			@selectInput("type", issueTypes)
+			@button("Create", templ.Attributes{"type": "submit"})
+		</form>
+	}
+}
+
+templ IssueDetail(issue Issue) {
+	@base() {
+		<div>
+			<p class="font-bold">{ issue.Title }</p>
+			<p>{ issue.Content }</p>
+			if issue.Status != "closed" {
+				@button("Close", templ.Attributes{"hx-put": "/api/issue", "hx-trigger": "click", "hx-vals": fmt.Sprintf(`{"Id":
+					"%s", "Status": "closed"}`, issue.Id)})
+			}
+		</div>
+	}
+}
+
+templ textInput(name string) {
+	<div class="flex flex-col">
+		<label for={ name }>{ titleCaser.String(name) }</label>
+		<input class="border rounded-md" id={ name } name={ name }/>
+	</div>
+}
+
+templ textAreaInput(name string) {
+	<div class="flex flex-col">
+		<label for={ name }>{ titleCaser.String(name) }</label>
+		<textarea class="border rounded-md" id={ name } name={ name }></textarea>
+	</div>
+}
+
+templ selectInput[T ~string](name string, opts []T) {
+	<div class="flex flex-col">
+		<label for={ name }>{ titleCaser.String(name) }</label>
+		<select class="border rounded-md" id={ name } name={ name }>
+			for _,opt := range opts {
+				<option value={ string(opt) }>{ string(opt) }</option>
+			}
+		</select>
+	</div>
+}
